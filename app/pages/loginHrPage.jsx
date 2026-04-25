@@ -1,0 +1,110 @@
+"use client";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { toast } from "react-toastify";
+
+const LoginHrPage = () => {
+  const [userName, setUserName] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const response = await axios.post(
+        "https://eashwa-backend.vercel.app/api/user/login",
+        { userName, password },
+      );
+      console.log("Response login", response);
+      if (response.data.ok) {
+        if (response.data.user.role === "employee") {
+          toast.success("Login successful!");
+          Cookies.set("authToken", response.data.authToken, { expires: 1 });
+          localStorage.setItem("token", response.data.authToken);
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+          router.push("/employees");
+        } else if (
+          response.data.user.role === "hr" ||
+          response.data.user.role === "admin" ||
+          response.data.user.role === "manager"
+        ) {
+          toast.success("Login successful!");
+          Cookies.set("authToken", response.data.authToken, { expires: 1 });
+          localStorage.setItem("token", response.data.authToken);
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+          router.push("/hr-dash");
+        } else {
+          toast.error("Wrong ID or Password");
+        }
+      }
+    } catch (err) {
+      // Set error message if login fails
+      const errorMessage =
+        err.response?.data?.message || "Login failed. Please try again.";
+      setError(errorMessage);
+      console.error("Login failed:", errorMessage);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-200">
+      <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
+        <h1 className="text-2xl font-bold text-center text-[#d86331] mb-6">
+          Login
+        </h1>
+        {error && (
+          <p className="text-red-500 text-sm text-center mb-4">{error}</p>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Username
+            </label>
+            <input
+              id="userName"
+              type="userName"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Enter your userName"
+              required
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-[#d86331] text-white py-2 px-4 rounded-md shadow hover:bg-[#df7f55] transition"
+          >
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default LoginHrPage;
